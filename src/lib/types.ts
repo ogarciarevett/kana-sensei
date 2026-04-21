@@ -42,7 +42,7 @@ export type AppState = {
   };
   progress: Record<string, ProgressEntry>;
   settings: {
-    mode: "recognition" | "recall" | "mixed";
+    mode: "recognition" | "recall" | "writing" | "mixed";
     daily_goal: number;
     preferred_model: "sonnet" | "opus";
   };

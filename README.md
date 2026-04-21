@@ -10,9 +10,16 @@ Local app for practicing Japanese, built for my personal workflow.
 ## Run
 ```bash
 bun install
+bun run strokes:build    # one-time: fetch KanjiVG stroke data (~800KB into public/kanjivg)
 bun run dev
 ```
 App opens at http://localhost:5173. State persists to `./memory/progress.json`.
+
+## Stroke data (writing mode)
+Practice mode **Escribir** uses KanjiVG stroke data for per-stroke grading
+(direction, shape, order). Files live in `public/kanjivg/<codepoint>.svg`.
+KanjiVG is © Ulrich Apel, licensed under CC BY-SA 3.0 —
+see `public/kanjivg/LICENSE.txt` and https://kanjivg.tagaini.net/.
 
 ## Daily flow
 1. Get the daily quest from my Claude scheduled task (runs in Claude.ai).

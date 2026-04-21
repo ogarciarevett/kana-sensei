@@ -3,6 +3,7 @@ import type { Grade } from '../lib/types';
 type Props = {
   onGrade: (g: Grade) => void;
   disabled?: boolean;
+  highlight?: Grade;  // suggested grade — gets a ring to signal a recommendation
 };
 
 const BUTTONS: { grade: Grade; label: string; cls: string; key: string }[] = [
@@ -12,20 +13,23 @@ const BUTTONS: { grade: Grade; label: string; cls: string; key: string }[] = [
   { grade: 'easy',  label: 'Fácil',    cls: 'bg-emerald-500 text-white hover:bg-emerald-600', key: '4' }
 ];
 
-export function GradeButtons({ onGrade, disabled }: Props) {
+export function GradeButtons({ onGrade, disabled, highlight }: Props) {
   return (
     <div className="grid grid-cols-4 gap-2 w-full">
-      {BUTTONS.map(b => (
-        <button
-          key={b.grade}
-          disabled={disabled}
-          onClick={() => onGrade(b.grade)}
-          className={`${b.cls} rounded-md px-3 py-3 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          <span className="block">{b.label}</span>
-          <span className="block text-xs opacity-70">{b.key}</span>
-        </button>
-      ))}
+      {BUTTONS.map(b => {
+        const ring = b.grade === highlight ? 'ring-2 ring-offset-2 ring-neutral-900' : '';
+        return (
+          <button
+            key={b.grade}
+            disabled={disabled}
+            onClick={() => onGrade(b.grade)}
+            className={`${b.cls} ${ring} rounded-md px-3 py-3 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            <span className="block">{b.label}</span>
+            <span className="block text-xs opacity-70">{b.key}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

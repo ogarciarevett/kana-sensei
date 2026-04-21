@@ -9,14 +9,25 @@ import { KANJI_N5 } from '../data/kanjiN5';
 import { KanaCard } from '../components/KanaCard';
 import { GradeButtons } from '../components/GradeButtons';
 import { MnemonicPanel } from '../components/MnemonicPanel';
+import { StrokeCanvas } from '../components/StrokeCanvas';
+import { StrokeReview } from '../components/StrokeReview';
+import { gradeDrawing, loadReference, type DrawingVerdict, type Reference, type Stroke } from '../lib/strokes';
 
-type Mode = 'recognition' | 'recall' | 'mixed';
+type Mode = 'recognition' | 'recall' | 'writing' | 'mixed';
+type ActiveMode = Exclude<Mode, 'mixed'>;
 
 const ALL_INFO: Record<string, KanaInfo> = (() => {
   const m: Record<string, KanaInfo> = {};
   for (const k of [...HIRAGANA, ...KATAKANA, ...KANJI_N5 as KanaInfo[]]) m[k.char] = k;
   return m;
 })();
+
+const MODE_LABEL: Record<Mode, string> = {
+  recognition: 'Reconocer',
+  recall: 'Recordar',
+  writing: 'Escribir',
+  mixed: 'Mixto'
+};
 
 function pickChoices(correct: KanaInfo, pool: KanaInfo[]): KanaInfo[] {
   const sameRow = pool.filter(k => k.row === correct.row && k.char !== correct.char);
@@ -34,11 +45,18 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function pickActive(mode: Mode): ActiveMode {
+  if (mode !== 'mixed') return mode;
+  const options: ActiveMode[] = ['recognition', 'recall', 'writing'];
+  return options[Math.floor(Math.random() * options.length)];
+}
+
 export function Practice() {
   const hydrated = useStore(s => s.hydrated);
   const hydrate = useStore(s => s.hydrate);
   const progress = useStore(s => s.progress);
   const mode = useStore(s => s.settings.mode) as Mode;
+  const setMode = useStore(s => s.setMode);
   const gradeChar = useStore(s => s.gradeChar);
   const logSession = useStore(s => s.logSession);
 
@@ -48,11 +66,17 @@ export function Practice() {
   const [input, setInput] = useState('');
   const [correctCount, setCorrectCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-  const [activeMode, setActiveMode] = useState<'recognition' | 'recall'>('recognition');
+  const [activeMode, setActiveMode] = useState<ActiveMode>('recognition');
   const [choices, setChoices] = useState<KanaInfo[]>([]);
   const [choiceAnswer, setChoiceAnswer] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Writing-mode state
+  const [userStrokes, setUserStrokes] = useState<Stroke[]>([]);
+  const [reference, setReference] = useState<Reference | null>(null);
+  const [refError, setRefError] = useState<string | null>(null);
+  const [verdict, setVerdict] = useState<DrawingVerdict | null>(null);
 
   useEffect(() => {
     if (!hydrated) hydrate();
@@ -74,21 +98,37 @@ export function Practice() {
   const currentChar = queue[idx];
   const info = currentChar ? ALL_INFO[currentChar] : null;
   const expected = info?.reading ?? '';
+  const meaning = useMemo(() => {
+    if (!info) return '';
+    const m = (info as KanaInfo & { meaning?: string }).meaning;
+    return m ?? info.example_word.meaning;
+  }, [info]);
 
   useEffect(() => {
     if (!info) return;
-    const m: 'recognition' | 'recall' =
-      mode === 'mixed' ? (Math.random() < 0.5 ? 'recognition' : 'recall') : mode;
+    const m = pickActive(mode);
     setActiveMode(m);
     setInput('');
     setRevealed(false);
     setChoiceAnswer(null);
+    setUserStrokes([]);
+    setVerdict(null);
+    setRefError(null);
+    setReference(null);
+
     if (m === 'recall') {
       const pool =
         info.script === 'hiragana' ? HIRAGANA :
         info.script === 'katakana' ? KATAKANA :
         (KANJI_N5 as KanaInfo[]);
       setChoices(pickChoices(info, pool));
+    } else if (m === 'writing') {
+      setChoices([]);
+      let cancelled = false;
+      loadReference(info.char)
+        .then(ref => { if (!cancelled) setReference(ref); })
+        .catch(e => { if (!cancelled) setRefError(e.message); });
+      return () => { cancelled = true; };
     } else {
       setChoices([]);
       setTimeout(() => inputRef.current?.focus(), 0);
@@ -111,9 +151,7 @@ export function Practice() {
   }
 
   function submitRecognition() {
-    if (!revealed) {
-      setRevealed(true);
-    }
+    if (!revealed) setRevealed(true);
   }
 
   function pickChoice(char: string) {
@@ -122,12 +160,22 @@ export function Practice() {
     setRevealed(true);
   }
 
+  function submitWriting() {
+    if (!reference) return;
+    setVerdict(gradeDrawing(userStrokes, reference));
+    setRevealed(true);
+  }
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (done || !info) return;
       if (e.key === ' ') {
-        e.preventDefault();
-        setRevealed(true);
+        // Space reveals in recognition/recall only — in writing mode it'd
+        // interfere with drawing.
+        if (activeMode !== 'writing') {
+          e.preventDefault();
+          setRevealed(true);
+        }
         return;
       }
       if (revealed) {
@@ -171,13 +219,28 @@ export function Practice() {
 
   if (!info) return null;
 
+  const modePills: Mode[] = ['recognition', 'recall', 'writing', 'mixed'];
+
   return (
     <div className="mx-auto max-w-xl p-6 space-y-6">
-      <div className="text-xs text-neutral-500">
-        {idx + 1} / {queue.length} · Modo: {activeMode === 'recognition' ? 'Reconocer' : 'Recordar'}
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-neutral-500">
+          {idx + 1} / {queue.length} · {MODE_LABEL[activeMode]}
+        </span>
+        <div className="flex rounded-md border border-neutral-300 overflow-hidden">
+          {modePills.map(p => (
+            <button
+              key={p}
+              onClick={() => setMode(p)}
+              className={`px-3 py-1.5 ${mode === p ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-600 hover:bg-neutral-50'}`}
+            >
+              {MODE_LABEL[p]}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {activeMode === 'recognition' ? (
+      {activeMode === 'recognition' && (
         <div className="text-center space-y-4">
           <KanaCard char={info.char} />
           {!revealed ? (
@@ -211,7 +274,9 @@ export function Practice() {
             </div>
           )}
         </div>
-      ) : (
+      )}
+
+      {activeMode === 'recall' && (
         <div className="space-y-4 text-center">
           <div className="text-2xl font-semibold">{expected}</div>
           <p className="text-sm text-neutral-500">Elige el carácter correcto</p>
@@ -239,6 +304,68 @@ export function Practice() {
             <div className="space-y-3 text-left">
               <MnemonicPanel info={info} />
               <GradeButtons onGrade={handleGrade} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeMode === 'writing' && (
+        <div className="space-y-4">
+          <div className="text-center">
+            <div className="text-sm text-neutral-500">Escribe el carácter</div>
+            <div className="text-lg font-semibold">
+              <span className="text-neutral-900">{expected}</span>
+              {meaning && <span className="text-neutral-500"> · {meaning}</span>}
+            </div>
+          </div>
+
+          {refError && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+              Sin datos de trazos para este carácter. Escribe y califícate manualmente.
+              <div className="mt-2 text-center">
+                <KanaCard char={info.char} size="sm" />
+              </div>
+            </div>
+          )}
+
+          {!revealed ? (
+            <div className="space-y-3">
+              <StrokeCanvas
+                strokes={userStrokes}
+                onStrokesChange={setUserStrokes}
+                reference={reference ?? undefined}
+                showReference={false}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={submitWriting}
+                  disabled={!reference || userStrokes.length === 0}
+                  className="flex-1 rounded-md bg-neutral-900 text-white px-4 py-3 text-sm disabled:opacity-40"
+                >
+                  Listo · evaluar
+                </button>
+                {refError && (
+                  <button
+                    onClick={() => setRevealed(true)}
+                    className="flex-1 rounded-md border border-neutral-300 px-4 py-3 text-sm"
+                  >
+                    Calificar manualmente
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reference && verdict ? (
+                <StrokeReview userStrokes={userStrokes} reference={reference} verdict={verdict} />
+              ) : (
+                <div className="text-center">
+                  <KanaCard char={info.char} />
+                  <div className="text-sm text-neutral-500 mt-1">{expected}</div>
+                </div>
+              )}
+              <MnemonicPanel info={info} />
+              <GradeButtons onGrade={handleGrade} highlight={verdict?.suggested} />
             </div>
           )}
         </div>

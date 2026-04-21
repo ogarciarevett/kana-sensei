@@ -1,0 +1,3 @@
+KanjiVG stroke data © Ulrich Apel, licensed under CC BY-SA 3.0.
+Source: https://github.com/KanjiVG/kanjivg
+Attribution: https://kanjivg.tagaini.net/
