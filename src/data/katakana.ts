@@ -1,0 +1,111 @@
+import type { KanaInfo } from '../lib/types';
+
+export const KATAKANA: KanaInfo[] = [
+  { char: "ア", reading: "a", row: "a", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "アニメ", reading: "anime", meaning: "anime" } },
+  { char: "イ", reading: "i", row: "a", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "イス", reading: "isu", meaning: "silla" } },
+  { char: "ウ", reading: "u", row: "a", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ウイルス", reading: "uirusu", meaning: "virus" } },
+  { char: "エ", reading: "e", row: "a", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "エレベーター", reading: "erebeetaa", meaning: "ascensor" } },
+  { char: "オ", reading: "o", row: "a", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "オレンジ", reading: "orenji", meaning: "naranja" } },
+  { char: "カ", reading: "ka", row: "k", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "カメラ", reading: "kamera", meaning: "cámara" } },
+  { char: "キ", reading: "ki", row: "k", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "キス", reading: "kisu", meaning: "beso" } },
+  {
+    char: "ク",
+    reading: "ku",
+    row: "k",
+    script: "katakana",
+    mnemonic: "El pico CERRADO de un cuervo — dos trazos que se juntan en un ángulo agudo. Confundible con ケ (que tiene una espada atravesada). Regla: KU = pico sin espada.",
+    example_word: { word: "クラス", reading: "kurasu", meaning: "clase" },
+    anime_ref: "Naruto"
+  },
+  {
+    char: "ケ",
+    reading: "ke",
+    row: "k",
+    script: "katakana",
+    mnemonic: "El mismo pico de ク pero con una ESPADA VERTICAL atravesándolo — Kenshiro clavando su ki. Confundible con ク. Regla: KE = ku + espada (3 trazos, no 2).",
+    example_word: { word: "ケーキ", reading: "keeki", meaning: "pastel" },
+    anime_ref: "Hokuto no Ken"
+  },
+  {
+    char: "コ",
+    reading: "ko",
+    row: "k",
+    script: "katakana",
+    mnemonic: "Un corchete [ girado 90°: trazo superior y trazo derecho, forma de 'C' con ángulos rectos. Confundible con ユ (que cierra por abajo, no por arriba). Regla: KO = CORCHETE arriba, abre hacia abajo.",
+    example_word: { word: "コーヒー", reading: "koohii", meaning: "café" }
+  },
+  { char: "サ", reading: "sa", row: "s", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "サッカー", reading: "sakkaa", meaning: "fútbol" } },
+  {
+    char: "シ",
+    reading: "shi",
+    row: "s",
+    script: "katakana",
+    mnemonic: "TRES trazos: los dos puntos cortos van VERTICALES en la izquierda (como dos ojos apilados), y el trazo largo BARRE HACIA ARRIBA desde abajo-izquierda. Confundible con ツ. Regla: SHI sube; lee los puntos de arriba a abajo.",
+    example_word: { word: "シャワー", reading: "shawaa", meaning: "ducha" },
+    anime_ref: "Death Note"
+  },
+  { char: "ス", reading: "su", row: "s", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "スキー", reading: "sukii", meaning: "esquí" } },
+  { char: "セ", reading: "se", row: "s", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "セール", reading: "seeru", meaning: "rebaja" } },
+  {
+    char: "ソ",
+    reading: "so",
+    row: "s",
+    script: "katakana",
+    mnemonic: "DOS trazos: el punto pequeño va ARRIBA-IZQUIERDA, y el trazo largo BAJA desde arriba-derecha. Confundible con ン. Regla: SO cae hacia abajo; el punto está arriba.",
+    example_word: { word: "ソース", reading: "soosu", meaning: "salsa" },
+    anime_ref: "Demon Slayer"
+  },
+  { char: "タ", reading: "ta", row: "t", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "タクシー", reading: "takushii", meaning: "taxi" } },
+  { char: "チ", reading: "chi", row: "t", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "チーズ", reading: "chiizu", meaning: "queso" } },
+  {
+    char: "ツ",
+    reading: "tsu",
+    row: "t",
+    script: "katakana",
+    mnemonic: "TRES trazos: los dos puntos cortos van HORIZONTALES arriba (como dos gotas cayendo), y el trazo largo BAJA desde arriba-derecha como un tsunami rompiendo. Confundible con シ. Regla: TSU cae; los puntos van de lado a lado.",
+    example_word: { word: "ツアー", reading: "tsuaa", meaning: "tour" },
+    anime_ref: "One Piece"
+  },
+  { char: "テ", reading: "te", row: "t", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "テレビ", reading: "terebi", meaning: "televisión" } },
+  { char: "ト", reading: "to", row: "t", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "トイレ", reading: "toire", meaning: "baño" } },
+  { char: "ナ", reading: "na", row: "n", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ナイフ", reading: "naifu", meaning: "cuchillo" } },
+  { char: "ニ", reading: "ni", row: "n", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ニュース", reading: "nyuusu", meaning: "noticias" } },
+  { char: "ヌ", reading: "nu", row: "n", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ヌードル", reading: "nuudoru", meaning: "fideos" } },
+  { char: "ネ", reading: "ne", row: "n", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ネクタイ", reading: "nekutai", meaning: "corbata" } },
+  { char: "ノ", reading: "no", row: "n", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ノート", reading: "nooto", meaning: "cuaderno" } },
+  { char: "ハ", reading: "ha", row: "h", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ハンバーガー", reading: "hanbaagaa", meaning: "hamburguesa" } },
+  { char: "ヒ", reading: "hi", row: "h", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ヒーロー", reading: "hiiroo", meaning: "héroe" } },
+  { char: "フ", reading: "fu", row: "h", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "フルーツ", reading: "furuutsu", meaning: "fruta" } },
+  { char: "ヘ", reading: "he", row: "h", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ヘルメット", reading: "herumetto", meaning: "casco" } },
+  { char: "ホ", reading: "ho", row: "h", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ホテル", reading: "hoteru", meaning: "hotel" } },
+  { char: "マ", reading: "ma", row: "m", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "マンガ", reading: "manga", meaning: "manga" } },
+  { char: "ミ", reading: "mi", row: "m", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ミルク", reading: "miruku", meaning: "leche" } },
+  { char: "ム", reading: "mu", row: "m", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ムービー", reading: "muubii", meaning: "película" } },
+  { char: "メ", reading: "me", row: "m", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "メール", reading: "meeru", meaning: "correo" } },
+  { char: "モ", reading: "mo", row: "m", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "モデル", reading: "moderu", meaning: "modelo" } },
+  { char: "ヤ", reading: "ya", row: "y", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "タイヤ", reading: "taiya", meaning: "neumático" } },
+  {
+    char: "ユ",
+    reading: "yu",
+    row: "y",
+    script: "katakana",
+    mnemonic: "Una 'U' con ángulos rectos: vertical interior y base horizontal CIERRA ABAJO. Como una mesa vista de frente. Confundible con コ (que abre hacia abajo). Regla: YU CIERRA abajo, KO ABRE abajo.",
+    example_word: { word: "ユーモア", reading: "yuumoa", meaning: "humor" }
+  },
+  { char: "ヨ", reading: "yo", row: "y", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ヨーグルト", reading: "yooguruto", meaning: "yogur" } },
+  { char: "ラ", reading: "ra", row: "r", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ラーメン", reading: "raamen", meaning: "ramen" } },
+  { char: "リ", reading: "ri", row: "r", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "リスト", reading: "risuto", meaning: "lista" } },
+  { char: "ル", reading: "ru", row: "r", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ルール", reading: "ruuru", meaning: "regla" } },
+  { char: "レ", reading: "re", row: "r", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "レストラン", reading: "resutoran", meaning: "restaurante" } },
+  { char: "ロ", reading: "ro", row: "r", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ロボット", reading: "robotto", meaning: "robot" } },
+  { char: "ワ", reading: "wa", row: "w", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ワイン", reading: "wain", meaning: "vino" } },
+  { char: "ヲ", reading: "wo", row: "w", script: "katakana", mnemonic: "(pendiente)", example_word: { word: "ヲタク", reading: "wotaku", meaning: "otaku (estilo antiguo)" } },
+  {
+    char: "ン",
+    reading: "n",
+    row: "n",
+    script: "katakana",
+    mnemonic: "DOS trazos: el punto pequeño va ABAJO-IZQUIERDA, y el trazo largo SUBE hacia la derecha. Confundible con ソ. Regla: N sube; el punto está abajo.",
+    example_word: { word: "パン", reading: "pan", meaning: "pan" }
+  }
+];
