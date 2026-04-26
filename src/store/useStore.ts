@@ -16,6 +16,7 @@ type Store = AppState & {
   hydrate: () => Promise<void>;
   gradeChar: (char: string, grade: Grade) => void;
   introduceChar: (char: string, reading: string, script: 'hiragana' | 'katakana' | 'kanji', meaning?: string) => void;
+  rescheduleNow: (chars: string[]) => void;
   setMode: (mode: AppState['settings']['mode']) => void;
   setModel: (m: 'sonnet' | 'opus') => void;
   appendChat: (msg: AppState['chat_history'][0]) => void;
@@ -64,6 +65,22 @@ export const useStore = create<Store>((set, get) => ({
     saveStateDebounced(stripStore({ ...get(), progress }));
   },
 
+  rescheduleNow: (chars) => {
+    const now = new Date(Date.now() - 3600_000).toISOString(); // 1h ago so it sorts first
+    const current = get().progress;
+    const progress = { ...current };
+    let changed = false;
+    for (const char of chars) {
+      const entry = current[char];
+      if (!entry) continue;
+      progress[char] = { ...entry, due_at: now };
+      changed = true;
+    }
+    if (!changed) return;
+    set({ progress });
+    saveStateDebounced(stripStore({ ...get(), progress }));
+  },
+
   setMode: (mode) => {
     const settings = { ...get().settings, mode };
     set({ settings });
@@ -90,7 +107,7 @@ export const useStore = create<Store>((set, get) => ({
 }));
 
 function stripStore(s: Store | (AppState & Partial<Store>)): AppState {
-  const { hydrated, hydrate, gradeChar, introduceChar, setMode, setModel, appendChat, logSession, ...rest } = s as any;
-  void hydrated; void hydrate; void gradeChar; void introduceChar; void setMode; void setModel; void appendChat; void logSession;
+  const { hydrated, hydrate, gradeChar, introduceChar, rescheduleNow, setMode, setModel, appendChat, logSession, ...rest } = s as any;
+  void hydrated; void hydrate; void gradeChar; void introduceChar; void rescheduleNow; void setMode; void setModel; void appendChat; void logSession;
   return rest;
 }
