@@ -1,4 +1,10 @@
+<p align="center">
+  <img src=".github/assets/banner.png" alt="kana-sensei: local Japanese practice with SRS, stroke-order writing, quests and an AI tutor" width="100%">
+</p>
+
 # Kana Sensei
+
+[![Checks](https://github.com/ogarciarevett/kana-sensei/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/ogarciarevett/kana-sensei/actions/workflows/checks.yml)
 
 A local Japanese practice app with SRS, writing exercises, quests, and one tutor
 available through Claude Code, Codex CLI, or Cursor Agent CLI. Select a provider
@@ -83,6 +89,16 @@ to the Cursor subprocess, never as a command flag or browser value.
 See [headless execution](https://cursor.com/docs/cli/headless).
 
 ## How the shared teacher works
+
+```mermaid
+flowchart LR
+    browser["Browser<br/>practice, writing, quests, teacher"] -->|POST /api/ask| server["Vite dev server<br/>loopback only"]
+    server --> teacher["Teacher.ask<br/>server/teacher.ts"]
+    teacher --> claude["claude"]
+    teacher --> codex["codex"]
+    teacher --> cursor["cursor-agent"]
+    server <--> progress[("memory/progress.json")]
+```
 
 `server/teacher.ts` exposes one `Teacher.ask` interface and three CLI adapters.
 The app has a real backend, so instruction-file shims alone would not change its
