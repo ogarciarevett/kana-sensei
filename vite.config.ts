@@ -4,5 +4,5 @@ import memoryPlugin from './vite-memory-plugin';
 
 export default defineConfig({
   plugins: [react(), memoryPlugin()],
-  server: { port: 5173 }
+  server: { host: '127.0.0.1', port: 5173 }
 });

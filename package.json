@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "bun test tests",
+    "check:secrets": "gitleaks git --redact",
+    "check:staged": "gitleaks git --pre-commit --staged --redact",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

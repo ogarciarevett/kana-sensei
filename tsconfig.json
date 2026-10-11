@@ -17,5 +17,5 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["src", "vite-memory-plugin.ts", "vite.config.ts"]
+  "include": ["server", "src", "vite-memory-plugin.ts", "vite.config.ts"]
 }

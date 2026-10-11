@@ -1,6 +1,6 @@
 ---
 name: kana-sensei-patterns
-description: Project-specific rules and patterns for Kana Sensei — a local React+TS Japanese practice app that shells out to `claude -p` on Santiago's Max subscription. Load whenever working in /Users/ogarcia/projects/e-japanese.
+description: Project rules for the local Japanese practice app and its shared CLI teacher adapters.
 version: 1.0.0
 source: local-codebase-analysis
 analyzed_at: 2026-04-21
@@ -44,43 +44,42 @@ Why: Santiago's explicit preference. The global memory has a `feedback_use_bun.m
 
 ## 3. Architecture — Vite plugin IS the backend
 
-There is no separate Node server. `vite-memory-plugin.ts` (project root) registers three middleware endpoints on the Vite dev server:
+There is no separate Node server. `vite-memory-plugin.ts` (project root) registers middleware endpoints on the Vite dev server:
 
 - `GET /api/state` → reads `./memory/progress.json`, returns `"null"` if missing
 - `POST /api/state` → validates JSON, writes the file
 - `GET /api/quests` → lists `memory/quests/*.md`
 - `POST /api/quests?date=YYYY-MM-DD` → writes `memory/quests/{date}.md`
-- `POST /api/ask-claude` → **spawns `claude -p`** with a Spanish-tutor system prompt
+- `POST /api/ask` delegates to the shared teacher with Claude, Codex, or Cursor
+- `POST /api/ask-claude` remains a compatibility alias with Claude as the default
 
 State and quests persist across restarts because they're plain files in `./memory/`. That directory is in `.gitignore` — never commit it.
 
 ---
 
-## 4. Claude integration — shell-out to `claude -p`, NOT the SDK
+## 4. Shared teacher integration
 
-The `/api/ask-claude` handler spawns the Claude Code CLI and pipes stdout back. **Two invariants protect Santiago's Max subscription:**
+`server/teacher.ts` owns one `Teacher.ask` interface, one tutor prompt, request
+validation, subprocess lifecycle, and three CLI adapters. Keep the CLI approach;
+do not add provider SDK dependencies or a separate backend.
 
-### Invariant A — Hard guard on `ANTHROPIC_API_KEY`
+- Claude Code uses `CLAUDE_CODE_OAUTH_TOKEN` from the environment or the dedicated
+  macOS Keychain cache described in the README. Preserve the guard rejecting
+  `ANTHROPIC_API_KEY` before a Claude subprocess starts.
+- Codex uses its CLI login and default model in read-only, ephemeral mode.
+- Cursor Agent CLI uses its login or `CURSOR_API_KEY` in read-only Ask mode.
+- Only Claude takes the sonnet or opus model selector. Do not pass these aliases
+  to other providers.
 
-If `process.env.ANTHROPIC_API_KEY` is non-empty when a request hits, the handler returns 400 with a guard error *before* spawning anything. Without this guard, the CLI would silently bill his API account instead of consuming Max quota.
+Each subprocess gets only its own provider credentials. Keep prompts on stdin,
+run from an empty disposable directory, and return only final answers. Never
+return raw subprocess diagnostics or pass tokens through browser requests,
+source, logs, or command arguments. Do not grant forced tool permissions.
 
-```ts
-// vite-memory-plugin.ts — this block must never be weakened
-if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim() !== '') {
-  return json(res, 400, { error: 'ANTHROPIC_API_KEY is set ... ' });
-}
-```
-
-### Invariant B — Child env scrubs the key
-
-`spawn('claude', [...], { env: { ...process.env, ANTHROPIC_API_KEY: '' } })`. Even if the guard is bypassed, the child sees an empty key and falls back to Max-authed session.
-
-### Rules when modifying ask-claude
-
-- Never switch to the `@anthropic-ai/sdk` Node SDK — that would require an API key.
-- Never remove the guard. If you need to test the API path (you don't), ask first.
-- Model selector accepts `"sonnet" | "opus"` and maps straight to `--model`. Don't invent other values.
-- The system prompt hard-codes Spanish output and an anime reference palette (Naruto, JJK, Death Note, One Piece, Demon Slayer, AoT, Chainsaw Man, FMA, Evangelion, Ghibli, HxH, Berserk). Adding a new anime is fine; silently dropping Spanish is not.
+Preserve Spanish explanations, beginner corrections, romaji-to-kana conversion,
+and anime mnemonics across all providers. Write new documentation, comments, and
+interface copy in English. Existing chat entries without a provider are Claude
+entries. Learner state stays in the ignored `memory/` directory.
 
 ---
 
@@ -125,7 +124,7 @@ if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim() !== ''
 
 ### Language
 
-**All user-facing copy is Spanish.** Commit messages, code comments, and tool output can stay English. If a mnemonic needs an English word (e.g. "key" for き), that's fine as a bridge, but the surrounding sentence stays Spanish.
+New interface copy, documentation, and comments are written in English. The tutor keeps Spanish explanations. If a mnemonic needs an English word (e.g. "key" for き), that's fine as a bridge, but the surrounding sentence stays Spanish.
 
 ### Anime references in mnemonics
 
@@ -154,10 +153,10 @@ Max content width 720px, centered. Top nav bar with app name left, streak count 
 ```
 src/
   data/         hiragana.ts, katakana.ts, kanjiN5.ts   (content, no logic)
-  lib/          types.ts, srs.ts, memoryClient.ts, askClaude.ts, parseQuest.ts
+  lib/          types.ts, srs.ts, memoryClient.ts, askTeacher.ts, parseQuest.ts
   store/        useStore.ts    (the only zustand store)
   components/   Nav.tsx, KanaCard.tsx, GradeButtons.tsx, MnemonicPanel.tsx
-  pages/        Dashboard.tsx, Practice.tsx, LearnNew.tsx, QuestImport.tsx, AskClaude.tsx
+  pages/        Dashboard.tsx, Practice.tsx, LearnNew.tsx, QuestImport.tsx, AskTeacher.tsx
 ```
 
 Rules:
@@ -168,31 +167,22 @@ Rules:
 
 ---
 
-## 9. Validation checklist (run before declaring work done)
+## 9. Validation checklist
+
+Add a failing check before changing behavior. Use the built-in test runner
+without adding a testing framework. Tests use synthetic prompts and mocked
+credentials and must never require real learner data or a paid model call.
 
 ```bash
-bun run typecheck                      # must be clean
-bun run dev &                          # starts Vite on :5173
-curl -s http://localhost:5173/api/state   # returns "null" or valid JSON
-
-# Guard positive test — MUST return the guard error, not a Claude response:
-kill %1
-ANTHROPIC_API_KEY=sk-test bun run dev &
-sleep 2
-curl -s -X POST http://localhost:5173/api/ask-claude \
-  -H 'Content-Type: application/json' \
-  -d '{"prompt":"hola","model":"sonnet"}'
-# ↑ expect: {"error":"ANTHROPIC_API_KEY is set …"}
-
-kill %1; unset ANTHROPIC_API_KEY; bun run dev &
-curl -s -X POST http://localhost:5173/api/ask-claude \
-  -H 'Content-Type: application/json' \
-  -d '{"prompt":"Di hola en japonés en una palabra","model":"sonnet"}'
-# ↑ expect: Spanish response
-kill %1
+bun run test
+bun run build
+bun run check:secrets
+# Review staged paths and content before every push:
+bun run check:staged
 ```
 
-If either curl behaves wrong, the Max-subscription protection is broken — stop and fix before merging.
+Verify the Claude API-billing guard, provider routing, safe diagnostics,
+credential isolation, and compatibility with historical learner state.
 
 ---
 
