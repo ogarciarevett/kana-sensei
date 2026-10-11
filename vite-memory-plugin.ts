@@ -1,8 +1,9 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { spawn } from 'child_process';
+import { createTeacher, type Teacher } from './server/teacher';
 import type { Plugin, ViteDevServer } from 'vite';
+import type { IncomingMessage } from 'node:http';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MEMORY_DIR = path.resolve(__dirname, 'memory');
@@ -28,11 +29,29 @@ function json(res: any, status: number, payload: unknown) {
   res.end(JSON.stringify(payload));
 }
 
-export default function memoryPlugin(): Plugin {
+function isLocalRequest(req: IncomingMessage): boolean {
+  const port = req.socket.localPort;
+  if (!port) return false;
+  const hosts = [`127.0.0.1:${port}`, `localhost:${port}`];
+  const host = req.headers.host?.toLowerCase();
+  const origin = req.headers.origin;
+  return !!host && hosts.includes(host) &&
+    (origin === undefined || hosts.some(local => origin === `http://${local}`));
+}
+
+function hasJsonBody(req: IncomingMessage): boolean {
+  return req.headers['content-type']?.split(';', 1)[0].trim().toLowerCase() === 'application/json';
+}
+
+export default function memoryPlugin(teacher: Teacher = createTeacher()): Plugin {
   return {
     name: 'kana-sensei-memory',
     configureServer(server: ViteDevServer) {
       ensureDirs().catch(console.error);
+      server.middlewares.use('/api', (req, res, next) => {
+        if (!isLocalRequest(req)) return json(res, 403, { error: 'Local requests only' });
+        next();
+      });
 
       // ── /api/state ──────────────────────────────────────────
       server.middlewares.use('/api/state', async (req, res) => {
@@ -49,6 +68,7 @@ export default function memoryPlugin(): Plugin {
             return;
           }
           if (req.method === 'POST') {
+            if (!hasJsonBody(req)) return json(res, 415, { error: 'Invalid content type' });
             const body = await readBody(req);
             JSON.parse(body); // validate it parses
             await fs.writeFile(STATE_FILE, body, 'utf-8');
@@ -83,51 +103,21 @@ export default function memoryPlugin(): Plugin {
         }
       });
 
-      // ── /api/ask-claude ─────────────────────────────────────
-      server.middlewares.use('/api/ask-claude', async (req, res) => {
+      const ask = async (req: any, res: any) => {
         if (req.method !== 'POST') return json(res, 405, { error: 'POST only' });
-
-        // Hard guard — refuse to run if the API key env var is set.
-        if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim() !== '') {
-          return json(res, 400, {
-            error: 'ANTHROPIC_API_KEY is set in the environment. Unset it and restart the dev server — otherwise this would bill your API account instead of using your Max subscription.'
-          });
-        }
-
+        if (!hasJsonBody(req)) return json(res, 415, { error: 'Invalid content type' });
         try {
           const body = JSON.parse(await readBody(req));
-          const prompt: string = body.prompt;
-          const model: 'sonnet' | 'opus' = body.model || 'sonnet';
-          if (!prompt || typeof prompt !== 'string') {
-            return json(res, 400, { error: 'prompt required' });
-          }
-
-          const systemPrompt = `You are a Japanese tutor for a Spanish-speaking beginner (A1/A2). Always reply in Spanish. If the user wrote Japanese, correct any errors with a clear explanation. Use anime references (Naruto, JJK, Death Note, One Piece, Demon Slayer, AoT, FMA, Evangelion, Ghibli, HxH, Berserk) when they help memorization. If the user wrote romaji, echo it back in kana. Keep English only for technical terms without a clean Spanish equivalent. Be concise.`;
-
-          const child = spawn('claude', [
-            '-p', prompt,
-            '--model', model,
-            '--append-system-prompt', systemPrompt,
-            '--output-format', 'text'
-          ], {
-            env: { ...process.env, ANTHROPIC_API_KEY: '' }
-          });
-
-          let out = '';
-          let err = '';
-          child.stdout.on('data', d => (out += d.toString()));
-          child.stderr.on('data', d => (err += d.toString()));
-
-          child.on('close', code => {
-            if (code !== 0) {
-              return json(res, 500, { error: err.trim() || `claude exited ${code}` });
-            }
-            json(res, 200, { response: out.trim(), model });
-          });
-        } catch (e: any) {
-          json(res, 500, { error: e.message });
+          const response = await teacher.ask(body);
+          json(res, 200, { response, provider: body.provider ?? 'claude' });
+        } catch (error) {
+          const message = error instanceof SyntaxError ? 'Invalid JSON request' :
+            error instanceof Error ? error.message : 'Teacher failed';
+          json(res, message.startsWith('Invalid') || message.startsWith('ANTHROPIC_API_KEY') ? 400 : 500, { error: message });
         }
-      });
+      };
+      server.middlewares.use('/api/ask', ask);
+      server.middlewares.use('/api/ask-claude', ask);
 
       // Keep reference so unused import warning stays quiet if needed.
       void SESSIONS_DIR;

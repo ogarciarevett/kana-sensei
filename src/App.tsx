@@ -5,7 +5,7 @@ import { Practice } from './pages/Practice';
 import { LearnNew } from './pages/LearnNew';
 import { Learned } from './pages/Learned';
 import { QuestImport } from './pages/QuestImport';
-import { AskClaude } from './pages/AskClaude';
+import { AskTeacher } from './pages/AskTeacher';
 
 export default function App() {
   return (
@@ -17,7 +17,8 @@ export default function App() {
         <Route path="/learn/new" element={<LearnNew />} />
         <Route path="/learned" element={<Learned />} />
         <Route path="/quest/import" element={<QuestImport />} />
-        <Route path="/ask-claude" element={<AskClaude />} />
+        <Route path="/ask" element={<AskTeacher />} />
+        <Route path="/ask-claude" element={<AskTeacher />} />
       </Routes>
     </div>
   );

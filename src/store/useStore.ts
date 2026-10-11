@@ -4,7 +4,7 @@ import { loadState, saveStateDebounced } from '../lib/memoryClient';
 import { applyGrade, newEntry } from '../lib/srs';
 
 const DEFAULT_STATE: AppState = {
-  user: { name: 'Santiago', started_on: '2026-04-17', streak: 0, last_session: '' },
+  user: { name: 'Learner', started_on: new Date().toISOString().slice(0, 10), streak: 0, last_session: '' },
   progress: {},
   settings: { mode: 'recognition', daily_goal: 10, preferred_model: 'sonnet' },
   session_log: [],

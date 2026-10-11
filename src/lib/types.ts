@@ -29,7 +29,8 @@ export type ProgressEntry = {
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
-  model: "sonnet" | "opus";
+  model: string;
+  provider?: "claude" | "codex" | "cursor";
   timestamp: string;
 };
 
