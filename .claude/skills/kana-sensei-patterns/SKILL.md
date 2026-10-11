@@ -22,7 +22,7 @@ A single-user local Japanese practice app (hiragana, katakana, N5 kanji) with an
 - Add deps: `bun add <pkg>` / `bun add -d <pkg>`
 - Lockfile is `bun.lock`. If `package-lock.json` ever appears, delete it.
 
-Why: Santiago's explicit preference. The global memory has a `feedback_use_bun.md` entry — this skill mirrors it so the rule surfaces at project-load time too.
+Bun is the package manager for this project.
 
 ---
 
@@ -136,7 +136,7 @@ If you must reach outside the palette, flag it in the PR.
 
 ### Placeholders
 
-`mnemonic: "(pendiente)"` is the accepted placeholder for unfinished content. Never ship a mnemonic like `"TODO"` or `"(fill me)"` — Santiago greps for `(pendiente)` to find what's left. Current state (as of 2026-04-21): hiragana 0, katakana 38, kanji N5 104 placeholders.
+`mnemonic: "(pendiente)"` is the accepted placeholder for unfinished content. Never ship a mnemonic like `"TODO"` or `"(fill me)"` — the learner searches for `(pendiente)` to find what's left. Current state (as of 2026-04-21): hiragana 0, katakana 38, kanji N5 104 placeholders.
 
 ### Visual palette
 
@@ -198,10 +198,10 @@ The spec explicitly rules these out; don't volunteer them:
 - Testing frameworks (Vitest, Jest, Playwright)
 - Electron wrapper
 
-If Santiago asks for one of these, confirm scope first — it probably means the constraint has relaxed.
+If the learner asks for one of these, confirm scope first — it probably means the constraint has relaxed.
 
 ---
 
 ## 11. Commit conventions
 
-Git history so far uses mixed-case prefixes (`Chore:`, `chore:`, `feat:`). Going forward, prefer lowercase conventional commits: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`. Co-author attribution is disabled globally in Santiago's `~/.claude/settings.json` — don't re-add it.
+Git history so far uses mixed-case prefixes (`Chore:`, `chore:`, `feat:`). Going forward, prefer lowercase conventional commits: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`. Keep commit messages free of attribution trailers.

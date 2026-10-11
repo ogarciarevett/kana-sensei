@@ -99,3 +99,43 @@ test('subprocess stdin works from an isolated directory and cleanup follows exit
   await assert.rejects(runCommand({ command: process.execPath, args: ['-e', 'process.stderr.write("private diagnostic");process.exit(1)'], input: '', env: {} }), /CLI failed/);
   await assert.rejects(runCommand({ command: '/nonexistent-kana-cli', args: [], input: '', env: {} }), /CLI unavailable/);
 });
+
+test('Codex skips warning lines while preserving answer and failure events', async () => {
+  const teacher = createTeacher({ env: {}, run: async () => 'Warning: synthetic notice\n\n  {"type":"item.completed","item":{"type":"agent_message","text":"Answer"}}\n' });
+  assert.equal(await teacher.ask({ provider: 'codex', prompt: 'Hi' }), 'Answer');
+  const failed = createTeacher({ env: {}, run: async () => 'Warning: synthetic notice\n{"type":"turn.failed"}' });
+  await assert.rejects(failed.ask({ provider: 'codex', prompt: 'Hi' }), /codex failed/);
+});
+
+test('timeout rejects promptly and stops helpers holding stdout open', async () => {
+  const { runCommand } = await import('../server/teacher');
+  const { mkdtemp, readFile, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const directory = await mkdtemp(`${tmpdir()}/kana-timeout-test-`);
+  const marker = `${directory}/heartbeat`;
+  const pidsFile = `${directory}/pids.json`;
+  const helperScript = 'const fs=require("node:fs");setInterval(()=>fs.appendFileSync(process.argv[1],"tick"),25)';
+  const script = `const {spawn}=require('node:child_process');const fs=require('node:fs');
+    const helper=spawn(process.execPath,['-e',${JSON.stringify(helperScript)},process.argv[1]],{stdio:'inherit'});
+    fs.writeFileSync(process.argv[2],JSON.stringify([process.pid,helper.pid]));setInterval(()=>{},1000);`;
+  const running = runCommand({ command: process.execPath, args: ['-e', script, marker, pidsFile], input: '', env: { PATH: process.env.PATH } }, 1000);
+  let watchdog: ReturnType<typeof setTimeout>;
+  try {
+    const deadline = new Promise((_, reject) => { watchdog = setTimeout(() => reject(new Error('Runner did not reject promptly')), 2500); });
+    await assert.rejects(Promise.race([running, deadline]), /CLI failed or timed out/);
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const before = await readFile(marker, 'utf8');
+    assert.ok(before.includes('tick'));
+    await new Promise(resolve => setTimeout(resolve, 100));
+    assert.equal(await readFile(marker, 'utf8'), before, 'helper must stop after timeout');
+  } finally {
+    clearTimeout(watchdog!);
+    try {
+      for (const pid of JSON.parse(await readFile(pidsFile, 'utf8'))) {
+        try { process.kill(pid, 'SIGKILL'); } catch { /* Already stopped. */ }
+      }
+    } catch { /* Process failed before creating the fixture. */ }
+    await running.catch(() => {});
+    await rm(directory, { recursive: true, force: true });
+  }
+});

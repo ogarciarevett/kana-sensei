@@ -12,16 +12,24 @@ type Runner = (command: Command) => Promise<string>;
 export const TEACHER_PROMPT = 'You are a Japanese tutor for a Spanish-speaking beginner (A1/A2). Always reply in Spanish. If the user wrote Japanese, correct any errors with a clear explanation. Use anime references (Naruto, JJK, Death Note, One Piece, Demon Slayer, AoT, FMA, Evangelion, Ghibli, HxH, Berserk) when they help memorization. If the user wrote romaji, echo it back in kana. Keep English only for technical terms without a clean Spanish equivalent. Be concise. Answer the lesson question directly without using tools or accessing files.';
 
 // Capture subprocess output internally. Never forward CLI diagnostics to the browser.
-export const runCommand: Runner = async ({ command, args, input, env }) => {
+export async function runCommand({ command, args, input, env }: Command, timeoutMs = 120_000): Promise<string> {
   const cwd = await mkdtemp(path.join(tmpdir(), 'kana-sensei-'));
   try {
     return await new Promise<string>((resolve, reject) => {
-      const child = spawn(command, args, { cwd, env, stdio: ['pipe', 'pipe', 'pipe'] });
+      const child = spawn(command, args, { cwd, env, detached: true, stdio: ['pipe', 'pipe', 'pipe'] });
       let output = '';
       let size = 0;
       let stopped = false;
-      const stop = () => { stopped = true; child.kill('SIGKILL'); };
-      const timer = setTimeout(stop, 120_000);
+      const stop = () => {
+        if (stopped) return;
+        stopped = true;
+        clearTimeout(timer);
+        try {
+          if (child.pid) process.kill(-child.pid, 'SIGKILL');
+        } catch { child.kill('SIGKILL'); }
+        reject(new Error('CLI failed or timed out'));
+      };
+      const timer = setTimeout(stop, timeoutMs);
       child.stdout.setEncoding('utf8');
       child.stdout.on('data', chunk => {
         size += Buffer.byteLength(chunk);
@@ -56,6 +64,7 @@ function environment(source: NodeJS.ProcessEnv, provider: Provider): NodeJS.Proc
 function codexAnswer(output: string): string {
   const answers: string[] = [];
   for (const line of output.trim().split('\n')) {
+    if (!line.trimStart().startsWith('{')) continue;
     const event = JSON.parse(line);
     if (event.type === 'error' || event.type === 'turn.failed') throw new Error('Failed turn');
     if (event.type === 'item.completed' && event.item?.type === 'agent_message') answers.push(event.item.text);

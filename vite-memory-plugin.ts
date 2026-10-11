@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createTeacher, type Teacher } from './server/teacher';
 import type { Plugin, ViteDevServer } from 'vite';
+import type { IncomingMessage } from 'node:http';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MEMORY_DIR = path.resolve(__dirname, 'memory');
@@ -28,11 +29,29 @@ function json(res: any, status: number, payload: unknown) {
   res.end(JSON.stringify(payload));
 }
 
+function isLocalRequest(req: IncomingMessage): boolean {
+  const port = req.socket.localPort;
+  if (!port) return false;
+  const hosts = [`127.0.0.1:${port}`, `localhost:${port}`];
+  const host = req.headers.host?.toLowerCase();
+  const origin = req.headers.origin;
+  return !!host && hosts.includes(host) &&
+    (origin === undefined || hosts.some(local => origin === `http://${local}`));
+}
+
+function hasJsonBody(req: IncomingMessage): boolean {
+  return req.headers['content-type']?.split(';', 1)[0].trim().toLowerCase() === 'application/json';
+}
+
 export default function memoryPlugin(teacher: Teacher = createTeacher()): Plugin {
   return {
     name: 'kana-sensei-memory',
     configureServer(server: ViteDevServer) {
       ensureDirs().catch(console.error);
+      server.middlewares.use('/api', (req, res, next) => {
+        if (!isLocalRequest(req)) return json(res, 403, { error: 'Local requests only' });
+        next();
+      });
 
       // ── /api/state ──────────────────────────────────────────
       server.middlewares.use('/api/state', async (req, res) => {
@@ -49,6 +68,7 @@ export default function memoryPlugin(teacher: Teacher = createTeacher()): Plugin
             return;
           }
           if (req.method === 'POST') {
+            if (!hasJsonBody(req)) return json(res, 415, { error: 'Invalid content type' });
             const body = await readBody(req);
             JSON.parse(body); // validate it parses
             await fs.writeFile(STATE_FILE, body, 'utf-8');
@@ -85,6 +105,7 @@ export default function memoryPlugin(teacher: Teacher = createTeacher()): Plugin
 
       const ask = async (req: any, res: any) => {
         if (req.method !== 'POST') return json(res, 405, { error: 'POST only' });
+        if (!hasJsonBody(req)) return json(res, 415, { error: 'Invalid content type' });
         try {
           const body = JSON.parse(await readBody(req));
           const response = await teacher.ask(body);

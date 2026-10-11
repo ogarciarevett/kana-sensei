@@ -14,7 +14,7 @@ bun install --frozen-lockfile
 bun run dev
 ```
 
-Open http://localhost:5173 and choose **Teacher**. The existing
+Open http://127.0.0.1:5173 and choose **Teacher**. The existing
 `/ask-claude` page URL still works. Progress and chat history remain in
 `memory/progress.json`. The backend runs only in the Vite development server;
 `bun run preview` serves static assets without tutor or persistence endpoints.
@@ -40,6 +40,7 @@ The app does not run setup or persist the token.
 On macOS, you can cache the same token through the **Keychain Access** GUI as a
 generic password with service name `kana-sensei.claude-oauth` and account `oauth`.
 Keep 1Password as the source of truth. Unlock the cache before starting a lesson.
+At the first lesson, macOS can ask to allow `security` to read the item. Click Always Allow.
 The environment token takes precedence; otherwise the server retrieves this
 specific cache internally. A missing or locked cache produces setup guidance.
 The app does not read Claude's credential files or require their private schema.
@@ -88,7 +89,10 @@ The app has a real backend, so instruction-file shims alone would not change its
 Claude-only endpoint. Keeping the existing CLI approach avoids SDK dependencies
 and gives all providers one tutor prompt and consistent validation and errors.
 
-Requests use `POST /api/ask` with a prompt and provider. The old
+Requests use `POST /api/ask` with a prompt and provider and require
+`Content-Type: application/json`. API requests accept only the local server Host
+and, when supplied, a local Origin with the actual listening port. This also
+protects progress and quest endpoints; progress writes require JSON. The old
 `POST /api/ask-claude` endpoint defaults to Claude for compatibility.
 Each subprocess receives the prompt through stdin and runs from a disposable
 empty directory, separate from learner files and project instructions. Claude
