@@ -1,10 +1,19 @@
-<p align="center">
-  <img src=".github/assets/banner.png" alt="kana-sensei: local Japanese practice with SRS, stroke-order writing, quests and an AI tutor" width="100%">
-</p>
+<div align="center">
 
-# Kana Sensei
+<img src=".github/assets/kana-sensei.svg" width="180" alt="kana-sensei: a kana flashcard with a brush">
 
+# kana-sensei
+
+**Practice Japanese with spaced repetition, writing and a tutor.**
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6.svg)](#run-locally)
 [![Checks](https://github.com/ogarciarevett/kana-sensei/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/ogarciarevett/kana-sensei/actions/workflows/checks.yml)
+
+Works with **Claude Code** · **Codex CLI** · **Cursor Agent CLI**
+
+</div>
+
+---
 
 A local Japanese practice app with SRS, writing exercises, quests, and one tutor
 available through Claude Code, Codex CLI, or Cursor Agent CLI. Select a provider
