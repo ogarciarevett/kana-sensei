@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+<title id="title">kana-sensei logo</title>
+<desc id="desc">A kana flashcard with a brush.</desc>
+<g stroke="#283C46" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+<rect x="50" y="42" width="144" height="177" rx="20" fill="#F7EACF"/><path d="M76 84h67M104 64v83c0 26-24 29-24 9 0-22 47-30 62-9 14 21-1 41-23 39M137 106c-4 24-17 43-30 54" fill="none" stroke="#ED866D" stroke-width="11"/><path d="m155 157 41-93c3-6 10-8 16-5l6 3c6 3 7 10 4 16l-50 88Z" fill="#ED866D"/><path d="m155 157 17 9c-2 21-14 33-33 34 9-14 9-23 16-43Z" fill="#283C46" stroke="none"/>
+</g>
+</svg>
